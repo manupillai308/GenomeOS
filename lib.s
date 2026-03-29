@@ -81,7 +81,7 @@ copy:
     add x0, x0, x4
     add x1, x1, x4
 
-    subs x2, x2, x4
+    subs x2, x2, #1
     bne copy
 
 memcpy_end:
