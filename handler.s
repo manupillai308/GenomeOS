@@ -136,7 +136,12 @@ trap_return:
 
 sync_handler:
     kernel_entry
-    mov x0, #1
+    mrs x0, esr_el1
+    lsr x1, x0, #26
+    cmp x1, #0b010101
+    mov x2, #1
+    mov x3, #3
+    csel x0, x2, x3, ne
     handler_entry
     b trap_return
     

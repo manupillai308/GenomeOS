@@ -4,6 +4,7 @@
 #include "irq.h"
 #include "uart.h"
 #include "handler.h"
+#include "syscall.h"
 
 static uint64_t ticks = 0;
 void init_interrupt_controller(void){
@@ -73,6 +74,11 @@ void handler(struct TrapFrame *tf){
 
             out_word(ICC_EOI, irq);
             break;
+        
+        case 3:
+            system_call(tf);
+            break;
+
         default:
             printk("unknown exception\r\n");
             while (1) { }
