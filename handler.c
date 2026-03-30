@@ -8,6 +8,7 @@
 #include "process.h"
 
 static uint64_t ticks = 0;
+
 void init_interrupt_controller(void){
     out_word(DIST, 0);
     out_word(CPU_INTERFACE, 0);
@@ -45,8 +46,13 @@ static void timer_interrupt_handler(void){
 
     if (mask & 1){
         ticks++;
+        wake_up(-1);
         out_word(TIMER_ACK, 1);
     }
+}
+
+uint64_t get_ticks(void){
+    return ticks;
 }
 
 void handler(struct TrapFrame *tf){
