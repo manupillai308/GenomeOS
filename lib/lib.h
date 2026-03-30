@@ -8,5 +8,6 @@ int writeu(const char *buffer, int size);
 int sleepu(uint64_t ticks);
 int open_file(char *name);
 void close_file(int fd);
+int get_file_size(int fd);
 
 #endif

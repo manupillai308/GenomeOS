@@ -66,5 +66,6 @@ void init_fs(void);
 int load_file(char *path, uint64_t addr);
 int open_file(struct Process *proc, char *path_name);
 void close_file(struct Process *proc, int fd);
+uint32_t get_file_size(struct Process *process, int fd);
 
 #endif
