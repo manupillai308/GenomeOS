@@ -3,6 +3,8 @@
 .global sleepu
 .global exitu
 .global waitu
+.global open_file
+.global close_file
 
 writeu:
     sub sp, sp, #16
@@ -46,3 +48,31 @@ waitu:
     svc #1234
     
     add sp, sp, #8
+    ret
+
+open_file:
+    sub sp, sp, #8
+    mov x8, #4
+
+    str x0, [sp]
+    mov x0, #1
+    mov x1, sp
+
+    svc #1234
+
+    add sp, sp, #8
+    ret
+
+
+close_file:
+    sub sp, sp, #8
+    mov x8, #5
+
+    str x0, [sp]
+    mov x0, #1
+    mov x1, sp
+
+    svc #1234
+
+    add sp, sp, #8
+    ret

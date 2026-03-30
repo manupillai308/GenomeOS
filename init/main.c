@@ -2,7 +2,14 @@
 
 int main(void){
 
-    printf("User process\r\n");
-    sleepu(100);
+    int fd;
+    fd = open_file("TEST.BIN");
+    if (fd == -1){
+        printf("open file failed\r\n");
+    } else{
+        printf("open file succeeds\r\n");
+    }
+
+    close_file(fd);
     return 0;
 }
