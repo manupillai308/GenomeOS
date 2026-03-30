@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "handler.h"
 #include "syscall.h"
+#include "process.h"
 
 static uint64_t ticks = 0;
 void init_interrupt_controller(void){
@@ -43,9 +44,6 @@ static void timer_interrupt_handler(void){
     uint32_t mask = in_word(TIMER_MSKIRQ);
 
     if (mask & 1){
-        if (ticks % 100 == 0){
-            printk("timer %u\r\n", ticks);
-        }
         ticks++;
         out_word(TIMER_ACK, 1);
     }
@@ -53,7 +51,7 @@ static void timer_interrupt_handler(void){
 
 void handler(struct TrapFrame *tf){
     uint32_t irq;
-
+    int schedule = 0;
     switch(tf->trapno){
         case 1:
             printk("sync error at %x: %x\r\n", tf->elr, tf->esr);
@@ -63,6 +61,7 @@ void handler(struct TrapFrame *tf){
             irq = get_irq_number();
             if (irq == 64){
                 timer_interrupt_handler();
+                schedule = 1;
             }
             else if (irq == 96 + 57){
                 uart_handler();
@@ -82,5 +81,8 @@ void handler(struct TrapFrame *tf){
         default:
             printk("unknown exception\r\n");
             while (1) { }
+    }
+    if (schedule == 1){
+        yield();
     }
 }

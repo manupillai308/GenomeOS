@@ -2,10 +2,15 @@
 #include "memory.h"
 #include "debug.h"
 #include "stddef.h"
+#include "lib.h"
 
 static struct Process process_table[NUM_PROC];
 static int pid_num = 1;
-void pstart(struct TrapFrame *tf);
+static struct ProcessControl pc;
+
+struct ProcessControl* get_pc(void){
+    return &pc;
+}
 
 static struct Process* find_unused_process(void){
     struct Process *process = NULL;
@@ -21,6 +26,7 @@ static struct Process* find_unused_process(void){
 
 static void init_idle_process(void){
     struct Process *process;
+    struct ProcessControl *process_control;
 
     process = find_unused_process();
     ASSERT(process == &process_table[0]);
@@ -28,6 +34,9 @@ static void init_idle_process(void){
     process->state = PROC_RUNNING;
     process->pid = 0;
     process->page_map = P2V(read_pgd());
+
+    process_control = get_pc();
+    process_control->current_process = process;
 }
 
 static struct Process* alloc_new_process(void){
@@ -43,9 +52,12 @@ static struct Process* alloc_new_process(void){
     process->state = PROC_INIT;
     process->pid = pid_num++;
 
+    process->context = process->stack + PAGE_SIZE - sizeof(struct TrapFrame) - 12*8;
+    *(uint64_t*)(process->context + 11*8) = (uint64_t)trap_return;
+
     process->tf = (struct TrapFrame*)(process->stack + PAGE_SIZE - sizeof(struct TrapFrame));
     process->tf->elr = 0x400000;
-    process->tf->sp0 = 0x400000 + PAGE_SIZE;
+    process->tf->sp0 = 0x400000 + PAGE_SIZE; // ensure sp0 is within the allocated PAGE.
     process->tf->spsr = 0;
 
     process->page_map = (uint64_t)kalloc();
@@ -57,21 +69,74 @@ static struct Process* alloc_new_process(void){
 
 static void init_user_process(void){
     struct Process *process;
+    struct ProcessControl *process_control;
+    struct HeadList *list;
 
     process = alloc_new_process();
     ASSERT(process != NULL);
     ASSERT(setup_uvm((uint64_t)process->page_map, "INIT.BIN"));
 
-}
+    process_control = get_pc();
+    list = &process_control->ready_list;
 
-void launch(void){
-    switch_vm(process_table[1].page_map);
-    pstart(process_table[1].tf);
+    process->state = PROC_READY;
+    append_list_tail(list, (struct List*)process);
 }
 
 void init_process(void){
 
     init_idle_process();
     init_user_process();
-    launch();
+}
+
+static void switch_process(struct Process *prev, struct Process *current){
+    switch_vm(current->page_map);
+    swap(&prev->context, current->context);
+}
+
+static void schedule(void){
+    
+    struct Process *prev_proc;
+    struct Process *current_proc;
+    struct ProcessControl *process_control;
+    struct HeadList *list;
+
+    process_control = get_pc();
+    list = &process_control->ready_list;
+
+    prev_proc = process_control->current_process;
+
+    if(is_list_empty(list)){
+        current_proc = &process_table[0];
+    }
+    else {
+        current_proc = (struct Process*)remove_list_head(list);
+    }
+
+    current_proc->state = PROC_RUNNING;
+    process_control->current_process = current_proc;
+
+    switch_process(prev_proc, current_proc);
+}
+
+void yield(void){
+    struct Process *process;
+    struct ProcessControl *process_control;
+    struct HeadList *list;
+
+    process_control = get_pc();
+    list = &process_control->ready_list;
+
+    if (is_list_empty(list)){
+        return;
+    }
+
+    process = process_control->current_process;
+    process->state = PROC_READY;
+
+    if (process->pid != 0){
+        append_list_tail(list, (struct List*)process);
+    }
+
+    schedule();
 }

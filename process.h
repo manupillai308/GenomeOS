@@ -6,11 +6,18 @@
 #include "lib.h"
 
 struct Process {
+    struct List *next;
     int pid;
     int state;
+    uint64_t context;
     uint64_t page_map;
     uint64_t stack;
     struct TrapFrame *tf;
+};
+
+struct ProcessControl {
+    struct Process *current_process;
+    struct HeadList ready_list;
 };
 
 #define STACK_SIZE (2*1024*1024)
@@ -21,5 +28,9 @@ struct Process {
 #define PROC_READY 3
 
 void init_process(void);
+struct ProcessControl* get_pc(void);
+void yield(void);
+void swap(uint64_t *prev, uint64_t next);
+void trap_return(void);
 
 #endif
