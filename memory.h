@@ -31,6 +31,7 @@ struct Page {
 
 void* kalloc(void);
 void kfree(uint64_t v);
+void free_vm(uint64_t map);
 void init_memory(void);
 bool map_page(uint64_t map, uint64_t v, uint64_t pa, uint64_t attribute);
 void switch_vm(uint64_t map);

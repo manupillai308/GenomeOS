@@ -20,6 +20,7 @@ struct ProcessControl {
     struct Process *current_process;
     struct HeadList ready_list;
     struct HeadList wait_list;
+    struct HeadList kill_list;
 };
 
 #define STACK_SIZE (2*1024*1024)
@@ -29,6 +30,7 @@ struct ProcessControl {
 #define PROC_RUNNING 2
 #define PROC_READY 3
 #define PROC_SLEEP 4
+#define PROC_KILLED 5
 
 void init_process(void);
 struct ProcessControl* get_pc(void);
@@ -37,5 +39,7 @@ void swap(uint64_t *prev, uint64_t next);
 void trap_return(void);
 void sleep(int wait);
 void wake_up(int wait);
+void wait(int pid);
+void exit(void);
 
 #endif
