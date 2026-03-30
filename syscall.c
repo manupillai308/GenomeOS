@@ -4,6 +4,7 @@
 #include "stddef.h"
 #include "process.h"
 #include "handler.h"
+#include "file.h"
 #include "process.h"
 
 static SYSTEMCALL system_calls[10];
@@ -56,12 +57,21 @@ static int sys_get_file_size(int64_t *argptr){
     return get_file_size(pc->current_process, argptr[0]);
 }
 
+static int sys_read_file(int64_t *argptr){
+    struct ProcessControl *pc = get_pc();
+    return read_file(pc->current_process, argptr[0], (void*)argptr[1], argptr[2]);
+}
+
+static int sys_fork(int64_t *argptr){
+    return fork();
+}
+
 void system_call(struct TrapFrame *tf){
     int64_t i = tf->x8;
     int64_t param_count = tf->x0;
     int64_t *argptr = (int64_t*)tf->x1;
 
-    if (param_count < 0 || i < 0 || i > 6){
+    if (param_count < 0 || i < 0 || i > 8){
         tf->x0 = -1;
         return;
     }
@@ -77,4 +87,6 @@ void init_system_call(void){
     system_calls[4] = sys_open_file;
     system_calls[5] = sys_close_file;
     system_calls[6] = sys_get_file_size;
+    system_calls[7] = sys_read_file;
+    system_calls[8] = sys_fork;
 }

@@ -5,6 +5,7 @@
 #include "lib.h"
 #include "stdbool.h"
 #include "file.h"
+#include "process.h"
 
 static struct Page free_memory;
 extern char end;
@@ -173,9 +174,11 @@ void free_vm(uint64_t map){
     free_pgd(map);
 }
 
-bool setup_uvm(uint64_t map, char *file_name){
+bool setup_uvm(struct Process *process, char *file_name){
 
     bool status = false;
+    uint64_t map = process->page_map;
+
     void *page = kalloc();
 
     if (page != NULL){
@@ -183,16 +186,58 @@ bool setup_uvm(uint64_t map, char *file_name){
         status = map_page(map, 0x400000, V2P(page), ENTRY_V | USER | NORMAL_MEMORY | ENTRY_ACCESSED);
 
         if(status == true){
-            if (load_file(file_name, (uint64_t)page) == -1){
+            int fd = open_file(process, file_name);
+            if (fd == -1){
                 free_vm(map);
                 return false;
             }
+            uint32_t size = get_file_size(process, fd);
+
+            if(read_file(process, fd, page, size) != size){
+                free_vm(map);
+                return false;
+            }
+
+            close_file(process, fd);
         }
         else{
             kfree((uint64_t)page);
             free_vm(map);
         }
     }
+    return status;
+}
+
+bool copy_uvm(uint64_t dst_map, uint64_t src_map, int size){
+
+    bool status = false;
+    unsigned int index;
+    uint64_t *pd = NULL;
+    uint64_t start;
+
+    void *page = kalloc();
+
+    if(page != NULL){
+        memset(page, 0, PAGE_SIZE);
+        status = map_page(dst_map, 0x400000, V2P(page), ENTRY_V | USER | NORMAL_MEMORY | ENTRY_ACCESSED);
+        if(status == true){
+            pd = find_pud_entry(src_map, 0x400000, 0, 0);
+            if(pd == NULL){
+                free_vm(dst_map);
+                return false;
+            }
+
+            index = (0x400000U >> 21) & 0x1FF;
+            ASSERT((pd[index] & ENTRY_V) == 1);
+            start = P2V(PTE_ADDR(pd[index]));
+            memcpy(page, (void*)start, size);
+        }
+        else{
+            kfree((uint64_t)page);
+            free_vm(dst_map);
+        }
+    }
+
     return status;
 }
 

@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "stdbool.h"
 
+struct Process;
 struct Page {
     struct Page* next;
 };
@@ -35,7 +36,8 @@ void free_vm(uint64_t map);
 void init_memory(void);
 bool map_page(uint64_t map, uint64_t v, uint64_t pa, uint64_t attribute);
 void switch_vm(uint64_t map);
-bool setup_uvm(uint64_t map, char *file_name);
+bool setup_uvm(struct Process *process, char *file_name);
 uint64_t read_pgd(void);
+bool copy_uvm(uint64_t dst_map, uint64_t src_map, int size);
 
 #endif

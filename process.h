@@ -2,7 +2,6 @@
 #define _PROCESS_H
 
 #include "handler.h"
-#include "file.h"
 #include "lib.h"
 
 struct Process {
@@ -42,5 +41,6 @@ void sleep(int wait);
 void wake_up(int wait);
 void wait(int pid);
 void exit(void);
+int fork(void);
 
 #endif

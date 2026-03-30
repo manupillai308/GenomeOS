@@ -2,17 +2,14 @@
 
 int main(void){
 
-    int fd;
-    int size;
-
-    fd = open_file("TEST.BIN");
-    if (fd == -1){
-        printf("open file failed\r\n");
-    } else{
-        size = get_file_size(fd);
-        printf("The size of the file is %d\r\n", (int64_t)size);
+    int pid;
+    pid = fork();
+    if(pid == 0){
+        printf("This is the new process\r\n");
     }
-
-    close_file(fd);
+    else{
+        printf("This is the current process\r\n");
+        waitu(pid);
+    }
     return 0;
 }

@@ -3,8 +3,8 @@
 #include "print.h"
 #include "lib.h"
 #include "debug.h"
-#include "stddef.h"
 #include "process.h"
+#include "stddef.h"
 
 static struct FCB *fcb_table;
 static struct FileDesc *file_desc_table;
@@ -147,68 +147,63 @@ static uint32_t search_file(char *path)
     return 0xffffffff;
 }
 
-static uint32_t read_raw_data(uint32_t cluster_index, char *buffer, uint32_t size)
+static uint32_t read_raw_data(uint32_t cluster_index, char *buffer, uint32_t position, uint32_t size)
 {
     struct BPB* bpb;
     char *data;
     uint32_t read_size = 0;
-    uint32_t cluster_size; 
-    uint32_t index; 
-    
-    bpb = get_fs_bpb();
-    cluster_size = get_cluster_size();
-    index = cluster_index;
+    uint32_t cluster_size = get_cluster_size(); 
+    uint32_t index = cluster_index;
+    uint32_t count = position / cluster_size;
+    uint32_t offset = position % cluster_size;
 
-    if (index < 2) {
-        return 0xffffffff;
-    }
-    
-    while (read_size < size) {
-        data  = (char *)((uint64_t)bpb + get_cluster_offset(index));
+    for (uint32_t i = 0; i < count; i++) {
         index = get_cluster_value(index);
-        
-        if (index >= 0xfff7) {
+        ASSERT(index < 0xfff7);
+    }
+
+    bpb = get_fs_bpb();
+
+    if (offset != 0) {
+        read_size = (offset + size) <= cluster_size ? size : (cluster_size - offset);
+        data = (char*)(get_cluster_offset(index) + (uint64_t)bpb);
+        memcpy(buffer, data + offset, read_size);
+        buffer += read_size;
+        index = get_cluster_value(index);
+    }
+
+    while (read_size < size && index < 0xfff7) {
+        data = (char*)(get_cluster_offset(index) + (uint64_t)bpb);
+
+        if (read_size + cluster_size >= size) {
             memcpy(buffer, data, size - read_size);
-            read_size += size - read_size;
+            read_size = size;
             break;
         }
 
         memcpy(buffer, data, cluster_size);
-
         buffer += cluster_size;
         read_size += cluster_size;
+        index = get_cluster_value(index);
     }
 
     return read_size;
 }
 
-static uint32_t read_file(uint32_t cluster_index, void *buffer, uint32_t size)
+uint32_t read_file(struct Process *process, int fd, void *buffer, uint32_t size)
 {
-    return read_raw_data(cluster_index, buffer, size);
-}
+    uint32_t position = process->file[fd]->position;
+    uint32_t file_size = process->file[fd]->fcb->file_size;
+    uint32_t read_size;
 
-int load_file(char *path, uint64_t addr)
-{
-    uint32_t index;
-    uint32_t file_size;
-    uint32_t cluster_index;
-    struct DirEntry *dir_entry;
-    int ret = -1;
-    
-    index = search_file(path);
-
-    if (index != 0xffffffff) {
-        
-        dir_entry = get_root_directory();
-        file_size = dir_entry[index].file_size;
-        cluster_index = dir_entry[index].cluster_index;
-        
-        if (read_file(cluster_index, (void*)addr, file_size) == file_size) {
-            ret = 0;
-        }
+    if (position + size  > file_size) {
+        return -1;
     }
 
-    return ret;
+    read_size = read_raw_data(process->file[fd]->fcb->cluster_index, buffer, position, size);
+    process->file[fd]->position += read_size;
+
+    return read_size;
 }
 
 static uint32_t get_fcb(uint32_t index)
@@ -229,8 +224,8 @@ static uint32_t get_fcb(uint32_t index)
     return index;
 }
 
-uint32_t get_file_size(struct Process *process, int fd){
-
+uint32_t get_file_size(struct Process *process, int fd)
+{
     return process->file[fd]->fcb->file_size;
 }
 
@@ -271,6 +266,7 @@ int open_file(struct Process *proc, char *path_name)
     fcb_index = get_fcb(entry_index);
     memset(&file_desc_table[file_desc_index], 0, sizeof(struct FileDesc));
     file_desc_table[file_desc_index].fcb = &fcb_table[fcb_index];
+    file_desc_table[file_desc_index].count = 1;
     proc->file[fd] = &file_desc_table[file_desc_index];
 
     return fd;
@@ -285,8 +281,11 @@ static void put_fcb(struct FCB *fcb)
 void close_file(struct Process *proc, int fd)
 {
     put_fcb(proc->file[fd]->fcb);
+    proc->file[fd]->count--;
 
-    proc->file[fd]->fcb = NULL;
+    if(proc->file[fd]->count == 0){
+        proc->file[fd]->fcb = NULL;
+    }
     proc->file[fd] = NULL;
 }
 

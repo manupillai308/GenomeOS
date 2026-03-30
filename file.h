@@ -56,6 +56,7 @@ struct FCB{
 struct FileDesc {
     struct FCB *fcb;
     uint32_t position;
+    int count;
 };
 
 #define FS_BASE P2V(0x30000000)
@@ -63,9 +64,9 @@ struct FileDesc {
 #define ENTRY_DELETED 0xe5
 
 void init_fs(void);
-int load_file(char *path, uint64_t addr);
 int open_file(struct Process *proc, char *path_name);
 void close_file(struct Process *proc, int fd);
 uint32_t get_file_size(struct Process *process, int fd);
+uint32_t read_file(struct Process *process, int fd, void *buffer, uint32_t size);
 
 #endif
