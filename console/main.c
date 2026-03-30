@@ -1,20 +1,24 @@
 #include "../lib/lib.h"
 
-static int read_cmd(char *buffer){
-    char ch[3] = {0};
+static int read_cmd(char *buffer)
+{
+    char ch[3] = { 0 };
     int buffer_size = 0;
+
     while (1) {
         ch[0] = keyboard_read();
-        if (ch[0] == '\r' || buffer_size > 80){
-            if (ch[0] == '\r'){
+        if (ch[0] == '\r' || buffer_size > 80) {
+            if (ch[0] == '\r') {
+                ch[0] = '\r';
                 ch[1] = '\n';
             }
+
             printf("%s", ch);
             ch[1] = 0;
             break;
         }
-        else if (ch[0] == 127){
-            if (buffer_size > 0){
+        else if (ch[0] == 127) {
+            if (buffer_size > 0) {
                 buffer[--buffer_size] = 0;
                 printf("%s", ch);
             }
@@ -24,29 +28,31 @@ static int read_cmd(char *buffer){
             printf("%s", ch);
         }
     }
+
     return buffer_size;
 }
 
-int main(void){
-
-    char buffer[100];
+int main(void)
+{
+    char buffer[100] = { 0 };
     int buffer_size = 0;
 
-    while (1){
-        printf("shell#");
+    while (1) {
+        printf("shell# ");
         memset(buffer, 0, sizeof(buffer));
         buffer_size = read_cmd(buffer);
-        if(buffer_size == 0){
+        if (buffer_size == 0) {
             continue;
         }
+
         int fd = open_file(buffer);
-        if (fd == -1){
+        if (fd == -1) {
             printf("Command Not Found\r\n");
         }
         else {
             close_file(fd);
             int pid = fork();
-            if(pid == 0){
+            if (pid == 0) {
                 exec(buffer);
             }
             else {
@@ -54,5 +60,6 @@ int main(void){
             }
         }
     }
+
     return 0;
 }
