@@ -1,5 +1,6 @@
 #include "uart.h"
 #include "lib.h"
+#include "keyboard.h"
 
 void init_uart(void){
     out_word(UART0_CR, 0);
@@ -28,13 +29,7 @@ void write_string(const char *string){
 void uart_handler(void){
     uint32_t status = in_word(UART0_MIS);
     if (status & (1 << 4)){
-        char ch = read_char();
-        if (ch == '\r'){
-            write_string("\r\n");
-        } else{
-            write_char(ch);
-        }
-
+        keyboard_handler();
         out_word(UART0_ICR, (1 << 4));
     }
 }

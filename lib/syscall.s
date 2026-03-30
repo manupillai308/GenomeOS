@@ -9,6 +9,7 @@
 .global read_file
 .global fork
 .global exec
+.global keyboard_read
 
 writeu:
     sub sp, sp, #16
@@ -128,3 +129,8 @@ exec:
     add sp, sp, #8
     ret
 
+keyboard_read:
+    mov x8, #10
+    mov x0, #0
+    svc #1234
+    ret

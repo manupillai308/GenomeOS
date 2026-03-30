@@ -13,5 +13,6 @@ aarch64-none-linux-gnu-gcc -std=c99 -ffreestanding -mgeneral-regs-only -c file.c
 aarch64-none-linux-gnu-gcc -std=c99 -ffreestanding -mgeneral-regs-only -c process.c
 aarch64-none-linux-gnu-gcc -std=c99 -ffreestanding -mgeneral-regs-only -c syscall.c
 aarch64-none-linux-gnu-gcc -std=c99 -ffreestanding -mgeneral-regs-only -c lib.c
-aarch64-none-linux-gnu-ld -nostdlib -T link.lds -o kernel boot.o main.o liba.o uart.o print.o debug.o handlera.o handler.o mmu.o memory.o file.o process.o fsimg.o syscall.o lib.o
+aarch64-none-linux-gnu-gcc -std=c99 -ffreestanding -mgeneral-regs-only -c keyboard.c
+aarch64-none-linux-gnu-ld -nostdlib -T link.lds -o kernel boot.o main.o liba.o uart.o print.o debug.o handlera.o handler.o mmu.o memory.o file.o process.o fsimg.o syscall.o lib.o keyboard.o
 aarch64-none-linux-gnu-objcopy -O binary kernel kernel8.img

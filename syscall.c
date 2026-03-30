@@ -6,8 +6,9 @@
 #include "handler.h"
 #include "file.h"
 #include "process.h"
+#include "keyboard.h"
 
-static SYSTEMCALL system_calls[10];
+static SYSTEMCALL system_calls[20];
 
 static int sys_write(int64_t *argptr){
     write_console((char*)argptr[0], (int)argptr[1]);
@@ -73,12 +74,16 @@ static int sys_exec(int64_t *argptr){
     return exec(process, (char*)argptr[0]);
 }
 
+static int sys_keyboard_read(int64_t *argptr){
+    return read_key_buffer();
+}
+
 void system_call(struct TrapFrame *tf){
     int64_t i = tf->x8;
     int64_t param_count = tf->x0;
     int64_t *argptr = (int64_t*)tf->x1;
 
-    if (param_count < 0 || i < 0 || i > 9){
+    if (param_count < 0 || i < 0 || i > 10){
         tf->x0 = -1;
         return;
     }
@@ -97,4 +102,5 @@ void init_system_call(void){
     system_calls[7] = sys_read_file;
     system_calls[8] = sys_fork;
     system_calls[9] = sys_exec;
+    system_calls[10] = sys_keyboard_read;
 }

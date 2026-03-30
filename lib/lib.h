@@ -13,5 +13,11 @@ int read_file(int fd, void *buffer, uint32_t size);
 int fork(void);
 void waitu(int pid);
 int exec(char *file_name);
+char keyboard_read(void);
+
+void memset(void *dst, int value, unsigned int size);
+void memcpy(void *dst, void *src, unsigned int size);
+void memmove(void *dst, void *src, unsigned int size);
+int memcmp(void *src1, void *src2, unsigned int size);
 
 #endif
