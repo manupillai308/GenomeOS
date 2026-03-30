@@ -1,0 +1,8 @@
+*
+!.gitignore
+!*/
+!*.s
+!*.c
+!*h
+!*.lds
+!DockerFile
