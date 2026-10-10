@@ -9,8 +9,9 @@ userspace. The code is intentionally compact so the path from boot assembly to
 a userspace program can be followed without a large framework.
 
 The long-term goal is to port GenomeOS to RISC-V and boot it on the custom
-[RISC-V FPGA SoC](../cpu) being developed alongside this project.
+[RISC-V FPGA SoC](https://github.com/manupillai308/Astra-32) being developed alongside this project.
 
+>[!IMPORTANT]
 > GenomeOS is a learning project, not a production operating system.
 
 ## Features
